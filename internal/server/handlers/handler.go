@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
 const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
@@ -25,13 +24,16 @@ func NewOauthHandler(server *server.Server) OauthHandler {
 }
 
 func (o OauthHandler) GetInfo(c echo.Context) error {
-	cfg := config.LoadOAUTHConfiguration()
-
-	oauthState := generateStateOauthCookie(c.Response())
-
-	u := cfg.AuthCodeURL(oauthState)
-
-	err := c.Redirect(http.StatusTemporaryRedirect, u)
+	googleConfig := config.LoadOAUTHConfiguration()
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		return err
+	}
+	state := base64.URLEncoding.EncodeToString(b)
+	log.Println(state)
+	url := googleConfig.AuthCodeURL(state)
+	err = c.Redirect(http.StatusTemporaryRedirect, url)
 	if err != nil {
 		log.Println(err)
 	}
@@ -74,23 +76,4 @@ func getUserDataFromGoogle(code string) ([]byte, error) {
 		return nil, fmt.Errorf("failed read response: %s", err.Error())
 	}
 	return contents, nil
-}
-
-func generateStateOauthCookie(w http.ResponseWriter) string {
-	var expiration = time.Now().Add(20 * time.Minute)
-
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		return ""
-	}
-	state := base64.URLEncoding.EncodeToString(b)
-	cookie := http.Cookie{
-		Name:    "oauthstate",
-		Value:   state,
-		Expires: expiration,
-	}
-	http.SetCookie(w, &cookie)
-
-	return state
 }
