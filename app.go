@@ -2,8 +2,8 @@ package application
 
 import (
 	"exemple_oauth/config"
-	"exemple_oauth/server"
-	"exemple_oauth/server/routes"
+	"exemple_oauth/internal/server"
+	"exemple_oauth/internal/server/routes"
 	"log"
 )
 

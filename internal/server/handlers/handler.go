@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"exemple_oauth/config"
-	"exemple_oauth/server"
+	"exemple_oauth/internal/domain"
+	"exemple_oauth/internal/server"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"io/ioutil"
@@ -31,8 +33,8 @@ func (o OauthHandler) GetInfo(c echo.Context) error {
 		return err
 	}
 	state := base64.URLEncoding.EncodeToString(b)
-	log.Println(state)
 	url := googleConfig.AuthCodeURL(state)
+	log.Println(url)
 	err = c.Redirect(http.StatusTemporaryRedirect, url)
 	if err != nil {
 		log.Println(err)
@@ -50,6 +52,12 @@ func (o OauthHandler) CallBack(c echo.Context) error {
 		}
 		return fmt.Errorf("redirect")
 	}
+	var usr domain.User
+	err = json.Unmarshal(data, &usr)
+	if err != nil {
+		return err
+	}
+	log.Println(usr)
 
 	fprintf, err := fmt.Fprintf(c.Response(), "UserInfo: %s\n", data)
 	if err != nil {
